@@ -1,11 +1,15 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'get-teams-by-repository'
+description: 'Get Repository without teams allowed into an organization'
+author: 'jbenaventem    '
 inputs:
-  milliseconds: # change this
+  organization: # change this
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'organization name'
+  teams:
+    required: false
+    description: 'List of teams valids'
+    default: ''
+
 runs:
   using: 'node16'
   main: 'dist/index.js'
