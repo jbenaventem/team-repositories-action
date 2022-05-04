@@ -9,6 +9,9 @@ inputs:
     required: false
     description: 'List of teams valids'
     default: ''
+  token:
+    required: false
+    description: 'test token'
 
 runs:
   using: 'node16'
