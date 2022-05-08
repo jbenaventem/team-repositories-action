@@ -137,18 +137,14 @@ function getTeamsByOrganization(octokit, { login, endcursor }) {
     return __awaiter(this, void 0, void 0, function* () {
         let teams = [];
         let _hasNextPage = true;
-        let data;
         while (_hasNextPage) {
             core.debug('call graphql with GET_TEAMS_BY_ORGANIZATION');
-            data = yield octokit.graphql(query_1.GET_TEAMS_BY_ORGANIZATION, {
+            const data = yield octokit.graphql(query_1.GET_TEAMS_BY_ORGANIZATION, {
                 login,
                 endcursor,
                 headers: { Accept: 'application/vnd.github.ocelot-preview+json' }
             });
-            core.debug(JSON.stringify(data));
-            core.debug(`Response ${data}`);
             const jsonParsed = JSON.parse(data);
-            core.info(`Json Parser ${jsonParsed}`);
             if (jsonParsed.data.organization == null) {
                 core.error(`Request failed: ${jsonParsed.errors.message}`);
                 return teams;

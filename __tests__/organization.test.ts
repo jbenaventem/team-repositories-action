@@ -1,4 +1,3 @@
-import * as core from '@actions/core'
 import {getOctokit} from '@actions/github'
 import {
   getTeamsByOrganization,
@@ -34,7 +33,8 @@ describe('Test Queries On Organization', () => {
         }
       ]
     }`
-    const retuned = `{
+    const retuned = `
+	{
       "data": {
         "organization": {
           "name": "Global CTO",
@@ -135,8 +135,9 @@ describe('Test Queries On Organization', () => {
           }
         }
       }
-    }`
-
+    }
+	`
+	
     beforeEach(() => {
       jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(retuned)
     })
@@ -195,9 +196,7 @@ describe('Test Queries On Organization', () => {
 
     it('calls getTeams organization must response null when org not not found', async () => {
       jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(not_found)
-      expect((await getTeamsByOrganization(octokit, variables)).length).toEqual(
-        0
-      )
+      expect((await getTeamsByOrganization(octokit, variables)).length).toEqual(0)
       expect(octokit.graphql).toBeCalledTimes(1)
     })
   })
