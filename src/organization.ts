@@ -54,7 +54,7 @@ export async function getTeamsByOrganization(
     })
     core.debug(JSON.stringify(data))
     core.debug(`Response ${data}`)
-    const jsonParsed = JSON.parse(data)
+    const jsonParsed = JSON.parse(JSON.stringify(data))
     core.info(`Json Parser ${jsonParsed}`) 
     if (jsonParsed.data.organization == null) {
       core.error(`Request failed: ${jsonParsed.errors.message}`)
