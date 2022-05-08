@@ -145,30 +145,25 @@ function getTeamsByOrganization(octokit, { login, endcursor }) {
                 endcursor,
                 headers: { Accept: 'application/vnd.github.ocelot-preview+json' }
             });
-            core.debug(`Response ${data.id}`);
-            _hasNextPage = data.teams.pageInfo.hasNextPage;
-            /**
-            const jsonParsed = JSON.parse(data)
-            
+            core.debug(JSON.stringify(data));
+            core.debug(`Response ${data}`);
+            const jsonParsed = JSON.parse(data);
+            core.info(`Json Parser ${jsonParsed}`);
             if (jsonParsed.data.organization == null) {
-              core.error(`Request failed: ${jsonParsed.errors.message}`)
-              return teams
+                core.error(`Request failed: ${jsonParsed.errors.message}`);
+                return teams;
             }
-        
-            _hasNextPage = jsonParsed.data.organization.teams.pageInfo.hasNextPage
-            endcursor = jsonParsed.data.organization.teams.pageInfo.endCursor
-        
-            const teamsConnection: ItemConnectionResponse[] =
-              jsonParsed.data.organization.teams.edges
+            _hasNextPage = jsonParsed.data.organization.teams.pageInfo.hasNextPage;
+            endcursor = jsonParsed.data.organization.teams.pageInfo.endCursor;
+            const teamsConnection = jsonParsed.data.organization.teams.edges;
             teams = teamsConnection.map(item => {
-              const aTeamResponse: TeamResponse = {
-                cursor: item.cursor,
-                teamId: item.node.id,
-                teamName: item.node.name
-              }
-              return aTeamResponse
-            })
-            */
+                const aTeamResponse = {
+                    cursor: item.cursor,
+                    teamId: item.node.id,
+                    teamName: item.node.name
+                };
+                return aTeamResponse;
+            });
             core.info(`Has Next Pages: ${_hasNextPage}`);
         }
         return teams;

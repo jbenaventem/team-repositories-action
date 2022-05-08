@@ -44,19 +44,18 @@ export async function getTeamsByOrganization(
 ): Promise<TeamResponse[]> {
   let teams: TeamResponse[] = []
   let _hasNextPage = true
-  let data: Organization
+  let data: string
   while (_hasNextPage) {
     core.debug('call graphql with GET_TEAMS_BY_ORGANIZATION')
-    data = await octokit.graphql<Organization>(GET_TEAMS_BY_ORGANIZATION, {
+    data = await octokit.graphql(GET_TEAMS_BY_ORGANIZATION, {
       login,
       endcursor,
       headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
     })
-    core.debug(`Response ${data.id}`)
-    _hasNextPage = data.teams.pageInfo.hasNextPage
-    /**
+    core.debug(JSON.stringify(data))
+    core.debug(`Response ${data}`)
     const jsonParsed = JSON.parse(data)
-    
+    core.info(`Json Parser ${jsonParsed}`) 
     if (jsonParsed.data.organization == null) {
       core.error(`Request failed: ${jsonParsed.errors.message}`)
       return teams
@@ -75,7 +74,7 @@ export async function getTeamsByOrganization(
       }
       return aTeamResponse
     })
-    */
+    
     core.info(`Has Next Pages: ${_hasNextPage}`)
   }
   return teams
