@@ -1,7 +1,9 @@
 import {getOctokit} from '@actions/github'
+import { countReset } from 'console'
 import {
   getTeamsByOrganization,
-  getRepositoriesByOrganization
+  getRepositoriesByOrganization,
+  TeamResponse
 } from '../src/organization'
 import {
   GET_REPOSITORIES_BY_ORGANIZATION,
@@ -33,9 +35,8 @@ describe('Test Queries On Organization', () => {
         }
       ]
     }`
-    const retuned = `
-	{
-      "data": {
+    const retuned_as_json = `
+      {
         "organization": {
           "name": "Global CTO",
           "id": "MDEyOk9yZ2FuaXphdGlvbjY3NDI1MjY4",
@@ -135,16 +136,16 @@ describe('Test Queries On Organization', () => {
           }
         }
       }
-    }
 	`
-	
+	const retuned = JSON.parse(retuned_as_json)
+
     beforeEach(() => {
       jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(retuned)
     })
 
     it('uses the correct query', () => {
       expect(GET_TEAMS_BY_ORGANIZATION).toMatchSnapshot(`
-        "query($login: String!, $endcursor: String)
+        "query organization($login: String!, $endcursor: String)
         {
           organization(login: $login) {
             name
@@ -171,11 +172,10 @@ describe('Test Queries On Organization', () => {
     })
     it('calls octokit.graphql with the correct query and variables', async () => {
       await getTeamsByOrganization(octokit, variables)
-      expect(octokit.graphql).toBeCalledTimes(1)
+	  expect(octokit.graphql).toBeCalledTimes(1)
       expect(octokit.graphql).toHaveBeenCalledWith(GET_TEAMS_BY_ORGANIZATION, {
         login: 'test-organization',
-        endcursor: 'idcursor',
-        headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
+        endcursor: 'idcursor'
       })
     })
     it('calls octokit.graphql with the correct query and only login var', async () => {
@@ -183,20 +183,13 @@ describe('Test Queries On Organization', () => {
       expect(octokit.graphql).toBeCalledTimes(1)
       expect(octokit.graphql).toHaveBeenCalledWith(GET_TEAMS_BY_ORGANIZATION, {
         login: 'test-organization',
-        endcursor: null,
-        headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
+        endcursor: null
       })
     })
     it('calls getTeamsOrganization must respond an TeamResponse Object', async () => {
-      expect((await getTeamsByOrganization(octokit, variables)).length).toEqual(
+      expect((await getTeamsByOrganization(octokit, variables))?.length).toEqual(
         12
       )
-      expect(octokit.graphql).toBeCalledTimes(1)
-    })
-
-    it('calls getTeams organization must response null when org not not found', async () => {
-      jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(not_found)
-      expect((await getTeamsByOrganization(octokit, variables)).length).toEqual(0)
       expect(octokit.graphql).toBeCalledTimes(1)
     })
   })
@@ -224,8 +217,7 @@ describe('Test Queries On Organization', () => {
         }
       ]
     }`
-    const retuned = `{
-	  "data": {
+    const returned_as_json = `{
 		"organization": {
 		  "name": "Global CTO",
 		  "id": "MDEyOk9yZ2FuaXphdGlvbjY3NDI1MjY4",
@@ -520,11 +512,11 @@ describe('Test Queries On Organization', () => {
 			]
 		  }
 		}
-	  }
-	}`
+	  }`
+	const returned = JSON.parse(returned_as_json)
 
     beforeEach(() => {
-      jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(retuned)
+      jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(returned)
     })
 
     it('uses the correct query', () => {
@@ -562,8 +554,7 @@ describe('Test Queries On Organization', () => {
         GET_REPOSITORIES_BY_ORGANIZATION,
         {
           login: 'test-organization',
-          endcursor: 'idcursor',
-          headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
+          endcursor: 'idcursor'
         }
       )
     })
@@ -574,23 +565,14 @@ describe('Test Queries On Organization', () => {
         GET_REPOSITORIES_BY_ORGANIZATION,
         {
           login: 'test-organization',
-          endcursor: null,
-          headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
+          endcursor: null
         }
       )
     })
     it('calls getRepositoriesByOrganization must respond an RepositoryResponse Object', async () => {
       expect(
-        (await getRepositoriesByOrganization(octokit, variables)).length
+        (await getRepositoriesByOrganization(octokit, variables))?.length
       ).toEqual(40)
-      expect(octokit.graphql).toBeCalledTimes(1)
-    })
-
-    it('calls getRepositoriesByOrganization must response null when org not not found', async () => {
-      jest.spyOn<any, string>(octokit, 'graphql').mockResolvedValue(not_found)
-      expect(
-        (await getRepositoriesByOrganization(octokit, variables)).length
-      ).toEqual(0)
       expect(octokit.graphql).toBeCalledTimes(1)
     })
   })

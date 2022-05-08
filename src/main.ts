@@ -1,8 +1,5 @@
 import * as core from '@actions/core'
-import {
-  getRepositoriesByOrganization,
-  getTeamsByOrganization
-} from './organization'
+import {getRepositoriesByOrganization,getTeamsByOrganization} from './organization'
 import * as github from '@actions/github'
 
 const inputs = async () => {
@@ -24,20 +21,22 @@ export async function run(): Promise<void> {
     core.setOutput('time', new Date().toTimeString())
 
     core.debug('call get Teams')
+    
     const teams = await getTeamsByOrganization(octokit, {
       login: settings.login,
       endcursor: null
     })
     core.debug(
-      `Get teams returns ${teams.length}  repositories by the ${settings.login} organization`
+      `Get teams returns ${teams?.length} by the ${settings.login} organization`
     )
     core.debug('call get Repositories')
     const repositories = await getRepositoriesByOrganization(octokit, {
       login: settings.login,
       endcursor: null
     })
+
     core.debug(
-      `Get Repositories returns ${repositories.length} repositories by the ${settings.login} organization`
+      `Get Repositories returns ${repositories?.length} by the ${settings.login} organization`
     )
     core.endGroup()
   } catch (error) {

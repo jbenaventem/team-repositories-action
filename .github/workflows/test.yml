@@ -24,4 +24,11 @@ jobs:
         with:
           organization: 'santander-group-cto'
           token: ${{ secrets.token }}
-
+  test-ko: # make sure the action works on a clean machine without building
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          organization: 'benauca-not-found'
+          token: ${{ secrets.token }}

@@ -1,4 +1,4 @@
-export const GET_REPOSITORIES_BY_ORGANIZATION = `query($login: String!, $endcursor: String)
+export const GET_REPOSITORIES_BY_ORGANIZATION = `query ($login: String!, $endcursor: String)
   {
     organization(login: $login) {
       name
@@ -23,7 +23,7 @@ export const GET_REPOSITORIES_BY_ORGANIZATION = `query($login: String!, $endcurs
   }
   `
 
-export const GET_TEAMS_BY_ORGANIZATION = `query($login: String!, $endcursor: String)
+export const GET_TEAMS_BY_ORGANIZATION = `query ($login: String!, $endcursor: String)
 {
     organization(login: $login) {
     name

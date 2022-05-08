@@ -1,10 +1,7 @@
 import * as core from '@actions/core'
 import {GitHub} from '@actions/github/lib/utils'
-import { Organization } from '@octokit/graphql-schema'
-import {
-  GET_REPOSITORIES_BY_ORGANIZATION,
-  GET_TEAMS_BY_ORGANIZATION
-} from './query'
+import {Maybe, Organization} from '@octokit/graphql-schema'
+import {GET_REPOSITORIES_BY_ORGANIZATION,GET_TEAMS_BY_ORGANIZATION} from './query'
 
 interface ItemConnectionResponse {
   cursor: string
@@ -14,24 +11,18 @@ interface ItemConnectionResponse {
   }
 }
 
-interface TeamResponse {
+export interface TeamResponse {
   cursor: string
   teamId: string
   teamName: string
 }
 
-interface RepositoryResponse {
+export interface RepositoryResponse {
   cursor: string
   repositoryId: string
   repositoryName: string
 }
 
-/**
- * Get teams by organization
- * @param octokit as octokit
- * @param var as login
- * @returns teams
- */
 export async function getTeamsByOrganization(
   octokit: InstanceType<typeof GitHub>,
   {
@@ -39,85 +30,64 @@ export async function getTeamsByOrganization(
     endcursor
   }: {
     login: string
-    endcursor: string | null
+    endcursor: Maybe<string> | undefined
   }
-): Promise<TeamResponse[]> {
-  let teams: TeamResponse[] = []
+): Promise<TeamResponse[] | undefined>{
+  let teams: TeamResponse[] | undefined= []
   let _hasNextPage = true
-  
   while (_hasNextPage) {
     core.debug('call graphql with GET_TEAMS_BY_ORGANIZATION')
-    const data:string = await octokit.graphql(GET_TEAMS_BY_ORGANIZATION, {
-      login,
-      endcursor,
-      headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
-    })
-    const jsonParsed = JSON.parse(data)
-    if (jsonParsed.data.organization == null) {
-      core.error(`Request failed: ${jsonParsed.errors.message}`)
-      return teams
-    }
-
-    _hasNextPage = jsonParsed.data.organization.teams.pageInfo.hasNextPage
-    endcursor = jsonParsed.data.organization.teams.pageInfo.endCursor
-
-    const teamsConnection: ItemConnectionResponse[] =
-    jsonParsed.data.organization.teams.edges
+    const data: any = await octokit.graphql<Organization>(
+      GET_TEAMS_BY_ORGANIZATION,
+      {login, endcursor}
+    )
+    _hasNextPage = data.organization.teams.pageInfo.hasNextPage
+    endcursor = data.organization.teams.pageInfo.endCursor
+    core.info(`- ${_hasNextPage}`)
+    core.info(`- ${endcursor}`)
+    const teamsConnection: ItemConnectionResponse[] = data.organization.teams.edges
     teams = teamsConnection.map(item => {
       const aTeamResponse: TeamResponse = {
         cursor: item.cursor,
         teamId: item.node.id,
         teamName: item.node.name
       }
-      return aTeamResponse
+      return aTeamResponse 
     })
-    
-    core.info(`Has Next Pages: ${_hasNextPage}`)
   }
   return teams
 }
 
 export async function getRepositoriesByOrganization(
   octokit: InstanceType<typeof GitHub>,
-  {
-    login,
-    endcursor
-  }: {
+  { login, endcursor}: {
     login: string
-    endcursor: string | null
+    endcursor: Maybe<string> | undefined
   }
-): Promise<RepositoryResponse[]> {
-  let repositories: RepositoryResponse[] = []
+):Promise<RepositoryResponse[] | undefined>{
   let _hasNextPage = true
-  let data: string
+  let repositories: RepositoryResponse[] | undefined= []
   while (_hasNextPage) {
-    core.debug("call graphql with GET_REPOSITORIES BY_ORGANIZATION ")
-    data = await octokit.graphql(GET_REPOSITORIES_BY_ORGANIZATION, {
-      login,
-      endcursor,
-      headers: {Accept: 'application/vnd.github.ocelot-preview+json'}
-    })
-    const jsonParsed = JSON.parse(data)
-    if (jsonParsed.data.organization == null) {
-      core.error(`Request failed: ${jsonParsed.errors.message}`)
-      return repositories
-    }
 
-    _hasNextPage =
-      jsonParsed.data.organization.repositories.pageInfo.hasNextPage
-    endcursor = jsonParsed.data.organization.repositories.pageInfo.endCursor
+    core.debug('call graphql with GET_REPOSITORIES BY_ORGANIZATION ')
+    const data:any = await octokit.graphql(
+      GET_REPOSITORIES_BY_ORGANIZATION,
+      {login,endcursor})
 
-    const repositoriesConnection: ItemConnectionResponse[] =
-      jsonParsed.data.organization.repositories.edges
-    repositories = repositoriesConnection.map(item => {
-      const aRepositoryResponse: RepositoryResponse = {
-        cursor: item.cursor,
-        repositoryId: item.node.id,
-        repositoryName: item.node.name
-      }
-      return aRepositoryResponse
-    })
-    core.info(`Has Next Pages: ${_hasNextPage}`)
+    _hasNextPage = data.organization.repositories.pageInfo.hasNextPage
+    endcursor = data.organization.repositories.pageInfo.endCursor
+    core.info(`-- ${_hasNextPage}`)
+    core.info(`-- ${endcursor}`)
+    const repositoriesConnection: ItemConnectionResponse[] = data.organization.repositories.edges
+      repositories = repositoriesConnection.map(item => {
+        const aRepositoryResponse: RepositoryResponse = {
+          cursor: item.cursor,
+          repositoryId: item.node.id,
+          repositoryName: item.node.name
+        }
+        return aRepositoryResponse 
+      })
   }
-  return repositories
+  return repositories 
 }
+ 

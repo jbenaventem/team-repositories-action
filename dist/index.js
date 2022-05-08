@@ -61,17 +61,17 @@ function run() {
             core.debug(`Organization is ${settings.login} ...`);
             core.setOutput('time', new Date().toTimeString());
             core.debug('call get Teams');
-            const teams = yield (0, organization_1.getTeamsByOrganization)(octokit, {
+            yield (0, organization_1.getTeamsByOrganization)(octokit, {
                 login: settings.login,
                 endcursor: null
             });
-            core.debug(`Get teams returns ${teams.length}  repositories by the ${settings.login} organization`);
+            core.debug(`Get teams returns repositories by the ${settings.login} organization`);
             core.debug('call get Repositories');
-            const repositories = yield (0, organization_1.getRepositoriesByOrganization)(octokit, {
+            yield (0, organization_1.getRepositoriesByOrganization)(octokit, {
                 login: settings.login,
                 endcursor: null
             });
-            core.debug(`Get Repositories returns ${repositories.length} repositories by the ${settings.login} organization`);
+            core.debug(`Get Repositories returns repositories by the ${settings.login} organization`);
             core.endGroup();
         }
         catch (error) {
@@ -133,71 +133,47 @@ const query_1 = __nccwpck_require__(6053);
  * @param var as login
  * @returns teams
  */
-function getTeamsByOrganization(octokit, { login, endcursor }) {
+function getDetailOrganization(octokit, query, { login, endcursor }) {
     return __awaiter(this, void 0, void 0, function* () {
-        let teams = [];
+        return yield octokit.graphql(query, {
+            login,
+            endcursor
+        });
+    });
+}
+function getTeamsByOrganization(octokit, { login, endcursor }) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
         let _hasNextPage = true;
         while (_hasNextPage) {
             core.debug('call graphql with GET_TEAMS_BY_ORGANIZATION');
-            const data = yield octokit.graphql(query_1.GET_TEAMS_BY_ORGANIZATION, {
-                login,
-                endcursor,
-                headers: { Accept: 'application/vnd.github.ocelot-preview+json' }
-            });
-            const jsonParsed = JSON.parse(data);
-            if (jsonParsed.data.organization == null) {
-                core.error(`Request failed: ${jsonParsed.errors.message}`);
-                return teams;
+            try {
+                const organization = yield getDetailOrganization(octokit, query_1.GET_TEAMS_BY_ORGANIZATION, { login, endcursor });
+                var json = __nccwpck_require__(9231);
+                const result = JSON.parse(JSON.stringify(organization));
+                _hasNextPage = organization.teams.pageInfo.hasNextPage;
+                endcursor = (_b = (_a = organization.teams) === null || _a === void 0 ? void 0 : _a.pageInfo) === null || _b === void 0 ? void 0 : _b.endCursor;
+                core.info(`${_hasNextPage}`);
+                core.info(`${endcursor}`);
             }
-            _hasNextPage = jsonParsed.data.organization.teams.pageInfo.hasNextPage;
-            endcursor = jsonParsed.data.organization.teams.pageInfo.endCursor;
-            const teamsConnection = jsonParsed.data.organization.teams.edges;
-            teams = teamsConnection.map(item => {
-                const aTeamResponse = {
-                    cursor: item.cursor,
-                    teamId: item.node.id,
-                    teamName: item.node.name
-                };
-                return aTeamResponse;
-            });
-            core.info(`Has Next Pages: ${_hasNextPage}`);
+            catch (error) {
+                core.error(`:( :( ${error.message}`);
+                _hasNextPage = false;
+            }
         }
-        return teams;
     });
 }
 exports.getTeamsByOrganization = getTeamsByOrganization;
 function getRepositoriesByOrganization(octokit, { login, endcursor }) {
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
-        let repositories = [];
         let _hasNextPage = true;
-        let data;
-        while (_hasNextPage) {
-            core.debug("call graphql with GET_REPOSITORIES BY_ORGANIZATION ");
-            data = yield octokit.graphql(query_1.GET_REPOSITORIES_BY_ORGANIZATION, {
-                login,
-                endcursor,
-                headers: { Accept: 'application/vnd.github.ocelot-preview+json' }
-            });
-            const jsonParsed = JSON.parse(data);
-            if (jsonParsed.data.organization == null) {
-                core.error(`Request failed: ${jsonParsed.errors.message}`);
-                return repositories;
-            }
-            _hasNextPage =
-                jsonParsed.data.organization.repositories.pageInfo.hasNextPage;
-            endcursor = jsonParsed.data.organization.repositories.pageInfo.endCursor;
-            const repositoriesConnection = jsonParsed.data.organization.repositories.edges;
-            repositories = repositoriesConnection.map(item => {
-                const aRepositoryResponse = {
-                    cursor: item.cursor,
-                    repositoryId: item.node.id,
-                    repositoryName: item.node.name
-                };
-                return aRepositoryResponse;
-            });
-            core.info(`Has Next Pages: ${_hasNextPage}`);
-        }
-        return repositories;
+        core.debug('call graphql with GET_REPOSITORIES BY_ORGANIZATION ');
+        const organization = yield getDetailOrganization(octokit, query_1.GET_REPOSITORIES_BY_ORGANIZATION, { login, endcursor });
+        _hasNextPage = (_b = (_a = organization.repositories) === null || _a === void 0 ? void 0 : _a.pageInfo) === null || _b === void 0 ? void 0 : _b.hasNextPage;
+        endcursor = (_d = (_c = organization.repositories) === null || _c === void 0 ? void 0 : _c.pageInfo) === null || _d === void 0 ? void 0 : _d.endCursor;
+        core.info(`Has Next Pages: ${_hasNextPage}`);
+        core.info(`${endcursor}`);
     });
 }
 exports.getRepositoriesByOrganization = getRepositoriesByOrganization;
@@ -212,7 +188,7 @@ exports.getRepositoriesByOrganization = getRepositoriesByOrganization;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GET_TEAMS_BY_ORGANIZATION = exports.GET_REPOSITORIES_BY_ORGANIZATION = void 0;
-exports.GET_REPOSITORIES_BY_ORGANIZATION = `query($login: String!, $endcursor: String)
+exports.GET_REPOSITORIES_BY_ORGANIZATION = `query ($login: String!, $endcursor: String)
   {
     organization(login: $login) {
       name
@@ -236,7 +212,7 @@ exports.GET_REPOSITORIES_BY_ORGANIZATION = `query($login: String!, $endcursor: S
     }
   }
   `;
-exports.GET_TEAMS_BY_ORGANIZATION = `query($login: String!, $endcursor: String)
+exports.GET_TEAMS_BY_ORGANIZATION = `query ($login: String!, $endcursor: String)
 {
     organization(login: $login) {
     name
@@ -8856,6 +8832,14 @@ function wrappy (fn, cb) {
 /***/ ((module) => {
 
 module.exports = eval("require")("encoding");
+
+
+/***/ }),
+
+/***/ 9231:
+/***/ ((module) => {
+
+module.exports = eval("require")("json");
 
 
 /***/ }),
