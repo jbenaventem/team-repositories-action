@@ -73,18 +73,10 @@ function run() {
                 endcursor: null
             });
             core.debug(`Get Repositories returns ${repositories === null || repositories === void 0 ? void 0 : repositories.length} by the ${settings.login} organization`);
-            let summary = `Report ${new Date().toTimeString} \nRepositories in the ${settings.login} without teams:`;
-            repositories === null || repositories === void 0 ? void 0 : repositories.forEach((repository) => __awaiter(this, void 0, void 0, function* () {
-                const teams = yield octokit.rest.repos.listTeams({
-                    owner: settings.login,
-                    repo: repository.repositoryName
-                });
-                if (teams.data.length == 0) {
-                    core.info(`🔥 Repository ${repository.repositoryName} without Teams. `);
-                    summary += `\n\t 🔥 Repository ${repository.repositoryName} without Team valid.`;
-                    core.setOutput('summary', summary);
-                }
-            }));
+            if (repositories) {
+                const summary = yield getSummary(settings.login, repositories, octokit);
+                core.setOutput('summary', summary);
+            }
         }
         catch (error) {
             if (error instanceof Error)
@@ -93,6 +85,24 @@ function run() {
     });
 }
 exports.run = run;
+function getSummary(organization, repositories, octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let time = new Date().toTimeString;
+        let summary = `Report ${time}\nRepositories in the ${organization} without teams:`;
+        //repositories?.forEach( async (repository) => {
+        for (const aRepository of repositories) {
+            const teams = yield octokit.rest.repos.listTeams({
+                owner: organization,
+                repo: aRepository.repositoryName
+            });
+            if (teams.data.length == 0) {
+                core.info(`🔥 Repository ${aRepository.repositoryName} without Teams. `);
+                summary += `\n\t 🔥 Repository ${aRepository.repositoryName} without Team valid.`;
+            }
+        }
+        return summary;
+    });
+}
 run();
 
 
