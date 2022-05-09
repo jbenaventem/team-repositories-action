@@ -4,7 +4,7 @@ import {Maybe, Organization} from '@octokit/graphql-schema'
 import {GET_REPOSITORIES_BY_ORGANIZATION,GET_TEAMS_BY_ORGANIZATION} from './query'
 
 interface ItemConnectionResponse {
-  cursor: string
+  //cursor: string
   node: {
     id: string
     name: string
@@ -12,13 +12,13 @@ interface ItemConnectionResponse {
 }
 
 export interface TeamResponse {
-  cursor: string
+  //cursor: string
   teamId: string
   teamName: string
 }
 
 export interface RepositoryResponse {
-  cursor: string
+  //cursor: string
   repositoryId: string
   repositoryName: string
 }
@@ -48,7 +48,7 @@ export async function getTeamsByOrganization(
     const teamsConnection: ItemConnectionResponse[] = data.organization.teams.edges
     teams = teamsConnection.map(item => {
       const aTeamResponse: TeamResponse = {
-        cursor: item.cursor,
+        //cursor: item.cursor,
         teamId: item.node.id,
         teamName: item.node.name
       }
@@ -76,12 +76,11 @@ export async function getRepositoriesByOrganization(
 
     _hasNextPage = data.organization.repositories.pageInfo.hasNextPage
     endcursor = data.organization.repositories.pageInfo.endCursor
-    core.info(`-- ${_hasNextPage}`)
-    core.info(`-- ${endcursor}`)
+
     const repositoriesConnection: ItemConnectionResponse[] = data.organization.repositories.edges
       repositories = repositoriesConnection.map(item => {
         const aRepositoryResponse: RepositoryResponse = {
-          cursor: item.cursor,
+          //cursor: item.cursor,
           repositoryId: item.node.id,
           repositoryName: item.node.name
         }

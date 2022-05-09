@@ -43,6 +43,8 @@ exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const organization_1 = __nccwpck_require__(6675);
 const github = __importStar(__nccwpck_require__(5438));
+//import * from '@octokit/rest'
+const baseUrl = 'https://api.github.com';
 const inputs = () => __awaiter(void 0, void 0, void 0, function* () {
     return {
         login: core.getInput('organization'),
@@ -61,17 +63,29 @@ function run() {
             core.debug(`Organization is ${settings.login} ...`);
             core.setOutput('time', new Date().toTimeString());
             core.debug('call get Teams');
-            yield (0, organization_1.getTeamsByOrganization)(octokit, {
+            const teams = yield (0, organization_1.getTeamsByOrganization)(octokit, {
                 login: settings.login,
                 endcursor: null
             });
-            core.debug(`Get teams returns repositories by the ${settings.login} organization`);
+            core.debug(`Get teams returns ${teams === null || teams === void 0 ? void 0 : teams.length} by the ${settings.login} organization`);
             core.debug('call get Repositories');
-            yield (0, organization_1.getRepositoriesByOrganization)(octokit, {
+            const repositories = yield (0, organization_1.getRepositoriesByOrganization)(octokit, {
                 login: settings.login,
                 endcursor: null
             });
-            core.debug(`Get Repositories returns repositories by the ${settings.login} organization`);
+            repositories === null || repositories === void 0 ? void 0 : repositories.forEach((repository) => __awaiter(this, void 0, void 0, function* () {
+                const teamsByRepository = yield octokit.rest.repos.listTeams({
+                    owner: settings.login,
+                    repo: repository.repositoryName
+                }).then(teams => {
+                    if (teams.data.length == 0) {
+                        core.info(`Repository ${repository.repositoryName} sin Teams asociados. `);
+                    }
+                }).catch(error => {
+                    core.error(`Error ${error.message} with the repository ${repository.repositoryName} sin Teams asociados. `);
+                });
+            }));
+            core.debug(`Get Repositories returns ${repositories === null || repositories === void 0 ? void 0 : repositories.length} by the ${settings.login} organization`);
             core.endGroup();
         }
         catch (error) {
@@ -127,53 +141,53 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getRepositoriesByOrganization = exports.getTeamsByOrganization = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const query_1 = __nccwpck_require__(6053);
-/**
- * Get teams by organization
- * @param octokit as octokit
- * @param var as login
- * @returns teams
- */
-function getDetailOrganization(octokit, query, { login, endcursor }) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return yield octokit.graphql(query, {
-            login,
-            endcursor
-        });
-    });
-}
 function getTeamsByOrganization(octokit, { login, endcursor }) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        let teams = [];
         let _hasNextPage = true;
         while (_hasNextPage) {
             core.debug('call graphql with GET_TEAMS_BY_ORGANIZATION');
-            try {
-                const organization = yield getDetailOrganization(octokit, query_1.GET_TEAMS_BY_ORGANIZATION, { login, endcursor });
-                var json = __nccwpck_require__(9231);
-                const result = JSON.parse(JSON.stringify(organization));
-                _hasNextPage = organization.teams.pageInfo.hasNextPage;
-                endcursor = (_b = (_a = organization.teams) === null || _a === void 0 ? void 0 : _a.pageInfo) === null || _b === void 0 ? void 0 : _b.endCursor;
-                core.info(`${_hasNextPage}`);
-                core.info(`${endcursor}`);
-            }
-            catch (error) {
-                core.error(`:( :( ${error.message}`);
-                _hasNextPage = false;
-            }
+            const data = yield octokit.graphql(query_1.GET_TEAMS_BY_ORGANIZATION, { login, endcursor });
+            _hasNextPage = data.organization.teams.pageInfo.hasNextPage;
+            endcursor = data.organization.teams.pageInfo.endCursor;
+            core.info(`- ${_hasNextPage}`);
+            core.info(`- ${endcursor}`);
+            const teamsConnection = data.organization.teams.edges;
+            teams = teamsConnection.map(item => {
+                const aTeamResponse = {
+                    //cursor: item.cursor,
+                    teamId: item.node.id,
+                    teamName: item.node.name
+                };
+                return aTeamResponse;
+            });
         }
+        return teams;
     });
 }
 exports.getTeamsByOrganization = getTeamsByOrganization;
 function getRepositoriesByOrganization(octokit, { login, endcursor }) {
-    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         let _hasNextPage = true;
-        core.debug('call graphql with GET_REPOSITORIES BY_ORGANIZATION ');
-        const organization = yield getDetailOrganization(octokit, query_1.GET_REPOSITORIES_BY_ORGANIZATION, { login, endcursor });
-        _hasNextPage = (_b = (_a = organization.repositories) === null || _a === void 0 ? void 0 : _a.pageInfo) === null || _b === void 0 ? void 0 : _b.hasNextPage;
-        endcursor = (_d = (_c = organization.repositories) === null || _c === void 0 ? void 0 : _c.pageInfo) === null || _d === void 0 ? void 0 : _d.endCursor;
-        core.info(`Has Next Pages: ${_hasNextPage}`);
-        core.info(`${endcursor}`);
+        let repositories = [];
+        while (_hasNextPage) {
+            core.debug('call graphql with GET_REPOSITORIES BY_ORGANIZATION ');
+            const data = yield octokit.graphql(query_1.GET_REPOSITORIES_BY_ORGANIZATION, { login, endcursor });
+            _hasNextPage = data.organization.repositories.pageInfo.hasNextPage;
+            endcursor = data.organization.repositories.pageInfo.endCursor;
+            core.info(`-- ${_hasNextPage}`);
+            core.info(`-- ${endcursor}`);
+            const repositoriesConnection = data.organization.repositories.edges;
+            repositories = repositoriesConnection.map(item => {
+                const aRepositoryResponse = {
+                    //cursor: item.cursor,
+                    repositoryId: item.node.id,
+                    repositoryName: item.node.name
+                };
+                return aRepositoryResponse;
+            });
+        }
+        return repositories;
     });
 }
 exports.getRepositoriesByOrganization = getRepositoriesByOrganization;
@@ -8832,14 +8846,6 @@ function wrappy (fn, cb) {
 /***/ ((module) => {
 
 module.exports = eval("require")("encoding");
-
-
-/***/ }),
-
-/***/ 9231:
-/***/ ((module) => {
-
-module.exports = eval("require")("json");
 
 
 /***/ }),
