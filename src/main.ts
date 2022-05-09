@@ -52,8 +52,7 @@ async function getSummary(
   repositories: RepositoryResponse[],
   octokit: any
   ) {
-    let time = new Date().toTimeString
-    let summary = `Report ${time}\nRepositories in the ${organization} without teams:`
+    let summary = `Repositories in the ${organization} without teams:`
     //repositories?.forEach( async (repository) => {
     for ( const aRepository of repositories) { 
       const teams = await octokit.rest.repos.listTeams({

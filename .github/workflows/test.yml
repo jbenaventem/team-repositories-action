@@ -20,13 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: get-repositories
+      - name: get-repositories-without-teams
+        id: cto-best-practices
         uses: ./
         with:
           organization: 'santander-group-cto'
           token: ${{ secrets.token }}
       - run: |
-          echo ${{steps.get-repositories.outputs.summary}}
+          echo "${{steps.cto-best-practices.outputs.summary}}"
   test-ko: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:

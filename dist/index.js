@@ -87,8 +87,7 @@ function run() {
 exports.run = run;
 function getSummary(organization, repositories, octokit) {
     return __awaiter(this, void 0, void 0, function* () {
-        let time = new Date().toTimeString;
-        let summary = `Report ${time}\nRepositories in the ${organization} without teams:`;
+        let summary = `Repositories in the ${organization} without teams:`;
         //repositories?.forEach( async (repository) => {
         for (const aRepository of repositories) {
             const teams = yield octokit.rest.repos.listTeams({
