@@ -20,10 +20,8 @@ export async function run(): Promise<void> {
     const octokit = github.getOctokit(settings.token)
     core.startGroup(` Getting Teams by Organization ${settings.login}`)
     core.debug(`Organization is ${settings.login} ...`)
-    core.setOutput('time', new Date().toTimeString())
-
-    core.debug('call get Teams')
     
+    core.debug('call get Teams')
     const teams = await getTeamsByOrganization(octokit, {
       login: settings.login,
       endcursor: null
@@ -31,6 +29,7 @@ export async function run(): Promise<void> {
     core.debug(
       `Get teams returns ${teams?.length} by the ${settings.login} organization`
     )
+    
     core.debug('call get Repositories')
     const repositories = await getRepositoriesByOrganization(octokit, {
       login: settings.login,
@@ -39,51 +38,21 @@ export async function run(): Promise<void> {
     core.debug(
       `Get Repositories returns ${repositories?.length} by the ${settings.login} organization`
     )    
-    let summary = `Repositories in the ${settings.login} without teams:`
+    
+    let summary = `Report ${new Date().toTimeString } \nRepositories in the ${settings.login} without teams:`
 
     repositories?.forEach( async (repository) => {
-      const teamsByRepository = await octokit.rest.repos.listTeams({
+      const teams = await octokit.rest.repos.listTeams({
           owner: settings.login,
           repo: repository.repositoryName
-      }).then( teams =>  {
-        if(teams.data.length == 0){
-          core.info(`🔥 Repository ${repository.repositoryName} without Teams. `)
-          summary += `\n\t 🔥 Repository ${repository.repositoryName} without Team valid.`
-        }
-      }).catch(error => {
-        core.error(`Error ${error.message} with the repository ${repository.repositoryName} . `)
       })
-    })
-    const conclusion = "Test"
-    const title = `Check Teams Best practices for ${settings.login} organization`
-    const createCheckRequest = {
-      ...github.context.repo,
-      name: "NAME",
-      head_sha: "",
-      status: 'completed',
-      conclusion,
-      output: {
-          title,
-          summary,
-          annotations: null
+      if(teams.data.length == 0){
+        core.info(`🔥 Repository ${repository.repositoryName} without Teams. `)
+        summary += `\n\t 🔥 Repository ${repository.repositoryName} without Team valid.`
+        core.setOutput('summary', summary)
       }
-    }
-    try {
-      const octokit = github.getOctokit(settings.login)
-      await octokit.rest.checks.create(createCheckRequest)
-    } catch (error) {
-        core.error(
-            `Failed to create checks using the provided token. (${error})`
-        )
-        core.warning(
-            `This usually indicates insufficient permissions.`
-        )
-    }
-
-
-
-    core.endGroup()
-  } catch (error) {
+    })
+   } catch (error) {
       if (error instanceof Error) core.setFailed(error.message)
   }
 }

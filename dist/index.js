@@ -61,7 +61,6 @@ function run() {
             const octokit = github.getOctokit(settings.token);
             core.startGroup(` Getting Teams by Organization ${settings.login}`);
             core.debug(`Organization is ${settings.login} ...`);
-            core.setOutput('time', new Date().toTimeString());
             core.debug('call get Teams');
             const teams = yield (0, organization_1.getTeamsByOrganization)(octokit, {
                 login: settings.login,
@@ -73,20 +72,19 @@ function run() {
                 login: settings.login,
                 endcursor: null
             });
+            core.debug(`Get Repositories returns ${repositories === null || repositories === void 0 ? void 0 : repositories.length} by the ${settings.login} organization`);
+            let summary = `Report ${new Date().toTimeString} \nRepositories in the ${settings.login} without teams:`;
             repositories === null || repositories === void 0 ? void 0 : repositories.forEach((repository) => __awaiter(this, void 0, void 0, function* () {
-                const teamsByRepository = yield octokit.rest.repos.listTeams({
+                const teams = yield octokit.rest.repos.listTeams({
                     owner: settings.login,
                     repo: repository.repositoryName
-                }).then(teams => {
-                    if (teams.data.length == 0) {
-                        core.info(`Repository ${repository.repositoryName} sin Teams asociados. `);
-                    }
-                }).catch(error => {
-                    core.error(`Error ${error.message} with the repository ${repository.repositoryName} sin Teams asociados. `);
                 });
+                if (teams.data.length == 0) {
+                    core.info(`🔥 Repository ${repository.repositoryName} without Teams. `);
+                    summary += `\n\t 🔥 Repository ${repository.repositoryName} without Team valid.`;
+                    core.setOutput('summary', summary);
+                }
             }));
-            core.debug(`Get Repositories returns ${repositories === null || repositories === void 0 ? void 0 : repositories.length} by the ${settings.login} organization`);
-            core.endGroup();
         }
         catch (error) {
             if (error instanceof Error)
@@ -175,8 +173,6 @@ function getRepositoriesByOrganization(octokit, { login, endcursor }) {
             const data = yield octokit.graphql(query_1.GET_REPOSITORIES_BY_ORGANIZATION, { login, endcursor });
             _hasNextPage = data.organization.repositories.pageInfo.hasNextPage;
             endcursor = data.organization.repositories.pageInfo.endCursor;
-            core.info(`-- ${_hasNextPage}`);
-            core.info(`-- ${endcursor}`);
             const repositoriesConnection = data.organization.repositories.edges;
             repositories = repositoriesConnection.map(item => {
                 const aRepositoryResponse = {
